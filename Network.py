@@ -54,10 +54,11 @@ class Network(object):
                                             cur_batch_size)
             print("Epoch " + str(x))
 
-            err = 1 - success / N
+            err = success / N
 
-            print("Error " + str(err))
-        print("Train error " + str(err))
+            print("Error " + str(1-err))
+        print("Train accuracy " + str(err))
+        print("Train error " + str(1-err))
 
     def test(self, objects, labels):
         success = 0
@@ -71,6 +72,7 @@ class Network(object):
             if get_label(labeled_object) == np.argmax(output_neuron_values):
                 success += 1
         err = success / len(labeled_objects)
+        print("Test accuracy " + str(err))
         print("Test error " + str(1 - err))
 
     def compute_hidden_layer_batch(self, obj):
