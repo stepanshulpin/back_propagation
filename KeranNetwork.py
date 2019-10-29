@@ -2,6 +2,7 @@ from datetime import datetime
 from keras import optimizers, Sequential
 from keras.layers import Dense
 import numpy as np
+from keras.utils import to_categorical
 
 
 class KerasNetwork(object):
@@ -21,7 +22,7 @@ class KerasNetwork(object):
         self.batch_size = batch_size
 
         np_objects = np.array(objects)
-        np_labels = np.array(labels)
+        np_labels = to_categorical(np.array(labels))
 
         sgd = optimizers.SGD(lr=learning_rate, momentum=0.0, nesterov=False)
         self.model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics = ['accuracy'])
@@ -36,6 +37,6 @@ class KerasNetwork(object):
 
     def test(self, objects, labels):
         np_objects = np.array(objects)
-        np_labels = np.array(labels)
+        np_labels = to_categorical(np.array(labels))
         test_result = self.model.evaluate(np_objects, np_labels)
         print("Test accuracy " + str(test_result))
