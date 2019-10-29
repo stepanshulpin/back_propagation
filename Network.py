@@ -26,11 +26,11 @@ class Network(object):
         np_objects = np.array(objects)
         np_labels = np.array(labels)
 
+        labeled_objects = get_labeled_objects(np_objects, np_labels)
+        N = len(labeled_objects)
+
         for x in range(epochs):
             success = 0
-
-            labeled_objects = get_labeled_objects(np_objects, np_labels)
-            N = len(labeled_objects)
             np.random.shuffle(labeled_objects)
             for n in range(0, N, batch_size):
                 cur_batch_size = min(batch_size, N - n)

@@ -13,7 +13,6 @@ def get_objects(labeled_objects):
 def init_weights(input_size, output_size):
     a = 2.0 / (input_size + output_size)
     w = np.random.uniform(-a, a, (input_size, output_size))
-    #w = np.full((input_size, output_size), a)
     return w
 
 def get_label(labeled_object):
