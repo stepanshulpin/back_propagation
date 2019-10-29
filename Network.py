@@ -1,6 +1,6 @@
 import numpy as np
 from utils import init_weights, shuffle_samples, softmax, relu, relu_der
-
+from datetime import datetime
 
 class Network(object):
 
@@ -24,6 +24,8 @@ class Network(object):
 
         np_objects = np.array(objects)
         np_labels = np.array(labels)
+
+        time_start = datetime.now()
 
         N = len(np_objects)
 
@@ -53,6 +55,10 @@ class Network(object):
             err = success / N
 
             print("Error " + str(1-err))
+
+        time = datetime.now() - time_start
+
+        print("Train time " + str(time))
         print("Train accuracy " + str(err))
         print("Train error " + str(1-err))
 
