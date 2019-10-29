@@ -1,5 +1,5 @@
 import numpy as np
-from utils import sigmoid, init_weights, shuffle_samples, softmax, sigmoid_der
+from utils import init_weights, shuffle_samples, softmax, relu, relu_der
 
 
 class Network(object):
@@ -35,8 +35,9 @@ class Network(object):
                 batch_labeled_objects = np_objects[n: n + cur_batch_size]
                 batch_labeled_labels = np_labels[n: n + cur_batch_size]
                 outputs = np.zeros((cur_batch_size, self.output_layer_size))
-                hidden_neuron_values = (sigmoid(np.dot(self.weight_first, batch_labeled_objects.T))).T
-                output_neuron_values = (softmax(np.dot(self.weight_second, hidden_neuron_values.T))).T
+                hidden_neuron_values = (np.dot(self.weight_first, batch_labeled_objects.T)).T
+                hidden_neuron_values_active = (relu(hidden_neuron_values.T)).T
+                output_neuron_values = (softmax(np.dot(self.weight_second, hidden_neuron_values_active.T))).T
                 for i in range(cur_batch_size):
                     output = np.zeros(self.output_layer_size, dtype=int)
                     output[batch_labeled_labels[i]] = 1
@@ -44,7 +45,8 @@ class Network(object):
                     if batch_labeled_labels[i] == np.argmax(output_neuron_values[i]):
                         success += 1
 
-                self.back_propagation_batch(batch_labeled_objects, outputs, hidden_neuron_values, output_neuron_values,
+                self.back_propagation_batch(batch_labeled_objects, outputs, hidden_neuron_values,
+                                            hidden_neuron_values_active, output_neuron_values,
                                             cur_batch_size)
             print("Epoch " + str(x))
 
@@ -69,22 +71,22 @@ class Network(object):
         print("Test error " + str(1 - err))
 
     def compute_hidden_layer_batch(self, obj):
-        return sigmoid(np.dot(obj, self.weight_first.transpose()))
+        return relu(np.dot(obj, self.weight_first.transpose()))
 
     def compute_output_layer_batch(self, hidden_neuron_values):
         output_neuron_values = np.exp(np.dot(hidden_neuron_values, self.weight_second.transpose()))
         return output_neuron_values / np.sum(output_neuron_values)
 
     def compute_hidden_layer(self, obj):
-        return sigmoid(np.dot(obj, self.weight_first.transpose()))
+        return relu(np.dot(obj, self.weight_first.transpose()))
 
     def compute_output_layer(self, hidden_neuron_values):
         output_neuron_values = np.exp(np.dot(hidden_neuron_values, self.weight_second.transpose()))
         return output_neuron_values / np.sum(output_neuron_values)
 
-    def back_propagation_batch(self, objects, outputs, hidden_neuron_values, output_neuron_values, N):
+    def back_propagation_batch(self, objects, outputs, hidden_neuron_values, hidden_neuron_values_active, output_neuron_values, N):
         output_neuron_deltas = outputs - output_neuron_values
-        self.correct_second_layer_weights_batch(output_neuron_deltas, hidden_neuron_values, N)
+        self.correct_second_layer_weights_batch(output_neuron_deltas, hidden_neuron_values_active, N)
         self.correct_first_layer_weights_batch(objects, output_neuron_deltas, hidden_neuron_values, N)
 
     def correct_second_layer_weights_batch(self, output_neuron_deltas, hidden_neuron_values, N):
@@ -92,6 +94,6 @@ class Network(object):
         self.weight_second = self.weight_second + self.learning_rate * grad
 
     def correct_first_layer_weights_batch(self, objects, output_neuron_deltas, hidden_neuron_values, N):
-        delta = np.dot(output_neuron_deltas, self.weight_second) * sigmoid_der(hidden_neuron_values)
+        delta = np.dot(output_neuron_deltas, self.weight_second) * relu_der(hidden_neuron_values)
         grad = np.dot(delta.T, objects) / N
         self.weight_first = self.weight_first + self.learning_rate * grad

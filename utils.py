@@ -12,6 +12,13 @@ def init_weights(input_size, output_size):
     w = np.random.uniform(-a, a, (input_size, output_size))
     return w
 
+def relu(X):
+    return X * (X > 0)
+
+def relu_der(X):
+
+    return 1. * (X > 0)
+
 def sigmoid(val):
     return 1 / (1 + np.exp(-val))
 
