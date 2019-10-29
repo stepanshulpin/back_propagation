@@ -7,10 +7,10 @@ import argparse
 
 def create_parser ():
     parser = argparse.ArgumentParser()
-    parser.add_argument ('-hidden_size', default=16)
-    parser.add_argument ('-epochs', default=10)
+    parser.add_argument ('-hidden_size', default=300)
+    parser.add_argument ('-epochs', default=15)
     parser.add_argument ('-rate', default=0.1)
-    parser.add_argument ('-batch', default=10)
+    parser.add_argument ('-batch', default=128)
 
     return parser
 
