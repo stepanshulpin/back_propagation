@@ -1,6 +1,5 @@
 import numpy as np
-
-from utils import get_label, get_labeled_objects, get_object, sigmoid, init_weights
+from utils import sigmoid, init_weights, shuffle_samples, softmax, sigmoid_der
 
 
 class Network(object):
@@ -26,28 +25,25 @@ class Network(object):
         np_objects = np.array(objects)
         np_labels = np.array(labels)
 
-        labeled_objects = get_labeled_objects(np_objects, np_labels)
-        N = len(labeled_objects)
+        N = len(np_objects)
 
         for x in range(epochs):
             success = 0
-            np.random.shuffle(labeled_objects)
+            np_objects, np_labels = shuffle_samples(np_objects, np_labels)
             for n in range(0, N, batch_size):
                 cur_batch_size = min(batch_size, N - n)
-                batch_labeled_objects = labeled_objects[n: n + cur_batch_size]
+                batch_labeled_objects = np_objects[n: n + cur_batch_size]
+                batch_labeled_labels = np_labels[n: n + cur_batch_size]
                 outputs = np.zeros((cur_batch_size, self.output_layer_size))
-                hidden_neuron_values = np.empty((cur_batch_size, self.hidden_layer_size))
-                output_neuron_values = np.empty((cur_batch_size, self.output_layer_size))
+                hidden_neuron_values = sigmoid(np.dot(self.weight_first, batch_labeled_objects.T))
+                output_neuron_values = softmax(np.dot(self.weight_second, hidden_neuron_values))
+                hidden_neuron_values = hidden_neuron_values.T
+                output_neuron_values = output_neuron_values.T
                 for i in range(cur_batch_size):
-                    labeled_object = batch_labeled_objects[i]
                     output = np.zeros(self.output_layer_size, dtype=int)
-                    output[get_label(labeled_object)] = 1
+                    output[batch_labeled_labels[i]] = 1
                     outputs[i] = output
-
-                    obj = get_object(labeled_object)
-                    hidden_neuron_values[i] = self.compute_hidden_layer_batch(obj)
-                    output_neuron_values[i] = self.compute_output_layer_batch(hidden_neuron_values[i])
-                    if get_label(labeled_object) == np.argmax(output_neuron_values[i]):
+                    if batch_labeled_labels[i] == np.argmax(output_neuron_values[i]):
                         success += 1
 
                 self.back_propagation_batch(batch_labeled_objects, outputs, hidden_neuron_values, output_neuron_values,
@@ -64,14 +60,13 @@ class Network(object):
         success = 0
         np_objects = np.array(objects)
         np_labels = np.array(labels)
-        labeled_objects = get_labeled_objects(np_objects, np_labels)
-        for labeled_object in labeled_objects:
-            obj = get_object(labeled_object)
+        for i in range(len(np_objects)):
+            obj = np_objects[i]
             hidden_neuron_values = self.compute_hidden_layer(obj)
             output_neuron_values = self.compute_output_layer(hidden_neuron_values)
-            if get_label(labeled_object) == np.argmax(output_neuron_values):
+            if np_labels[i] == np.argmax(output_neuron_values):
                 success += 1
-        err = success / len(labeled_objects)
+        err = success / len(np_objects)
         print("Test accuracy " + str(err))
         print("Test error " + str(1 - err))
 
@@ -89,25 +84,16 @@ class Network(object):
         output_neuron_values = np.exp(np.dot(hidden_neuron_values, self.weight_second.transpose()))
         return output_neuron_values / np.sum(output_neuron_values)
 
-    def back_propagation_batch(self, labeled_objects, outputs, hidden_neuron_values, output_neuron_values, N):
+    def back_propagation_batch(self, objects, outputs, hidden_neuron_values, output_neuron_values, N):
         output_neuron_deltas = outputs - output_neuron_values
         self.correct_second_layer_weights_batch(output_neuron_deltas, hidden_neuron_values, N)
-        self.correct_first_layer_weights_batch(labeled_objects, output_neuron_deltas, hidden_neuron_values, N)
+        self.correct_first_layer_weights_batch(objects, output_neuron_deltas, hidden_neuron_values, N)
 
     def correct_second_layer_weights_batch(self, output_neuron_deltas, hidden_neuron_values, N):
-        grad = np.zeros((self.output_layer_size, self.hidden_layer_size))
-        for i in range(N):
-            grad += np.dot(output_neuron_deltas[i].reshape(self.output_layer_size, 1),
-                           hidden_neuron_values[i].reshape(1, self.hidden_layer_size))
-        grad /= N
+        grad = np.dot(output_neuron_deltas.T, hidden_neuron_values) / N
         self.weight_second = self.weight_second + self.learning_rate * grad
 
-    def correct_first_layer_weights_batch(self, labeled_objects, output_neuron_deltas, hidden_neuron_values, N):
-        grad = np.zeros((self.hidden_layer_size, self.input_layer_size))
-        for i in range(N):
-            hidden_neuron_delta = hidden_neuron_values[i] * (1 - hidden_neuron_values[i]) * np.dot(
-                output_neuron_deltas[i], self.weight_second)
-            grad += np.dot(hidden_neuron_delta.reshape(
-                self.hidden_layer_size, 1), get_object(labeled_objects[i]).reshape(1, self.input_layer_size))
-        grad /= N
+    def correct_first_layer_weights_batch(self, objects, output_neuron_deltas, hidden_neuron_values, N):
+        delta = np.dot(output_neuron_deltas, self.weight_second) * sigmoid_der(hidden_neuron_values)
+        grad = np.dot(delta.T, objects) / N
         self.weight_first = self.weight_first + self.learning_rate * grad
