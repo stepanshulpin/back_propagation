@@ -60,11 +60,10 @@ class Network(object):
         success = 0
         np_objects = np.array(objects)
         np_labels = np.array(labels)
+        hidden_neuron_values = (relu(np.dot(self.weight_first, np_objects.T))).T
+        output_neuron_values = (softmax(np.dot(self.weight_second, hidden_neuron_values.T))).T
         for i in range(len(np_objects)):
-            obj = np_objects[i]
-            hidden_neuron_values = self.compute_hidden_layer(obj)
-            output_neuron_values = self.compute_output_layer(hidden_neuron_values)
-            if np_labels[i] == np.argmax(output_neuron_values):
+            if np_labels[i] == np.argmax(output_neuron_values[i]):
                 success += 1
         err = success / len(np_objects)
         print("Test accuracy " + str(err))
