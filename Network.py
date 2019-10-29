@@ -35,10 +35,8 @@ class Network(object):
                 batch_labeled_objects = np_objects[n: n + cur_batch_size]
                 batch_labeled_labels = np_labels[n: n + cur_batch_size]
                 outputs = np.zeros((cur_batch_size, self.output_layer_size))
-                hidden_neuron_values = sigmoid(np.dot(self.weight_first, batch_labeled_objects.T))
-                output_neuron_values = softmax(np.dot(self.weight_second, hidden_neuron_values))
-                hidden_neuron_values = hidden_neuron_values.T
-                output_neuron_values = output_neuron_values.T
+                hidden_neuron_values = (sigmoid(np.dot(self.weight_first, batch_labeled_objects.T))).T
+                output_neuron_values = (softmax(np.dot(self.weight_second, hidden_neuron_values.T))).T
                 for i in range(cur_batch_size):
                     output = np.zeros(self.output_layer_size, dtype=int)
                     output[batch_labeled_labels[i]] = 1
